@@ -1,0 +1,47 @@
+# 让文本模型拥有多模态的技能 — AI Media Generation
+
+You have access to 让文本模型拥有多模态的技能, a zero-dependency Python CLI for AI media generation via Agnes AI API.
+
+## Setup
+⚠️ BEFORE any command: check scripts/.env has AGNES_API_KEY=sk-... set. If NOT set, STOP and ask user for key first — give them https://platform.agnes-ai.com/settings/apiKeys (free). Save it:
+```bash
+python scripts/agnes_api.py set-key sk-USER_KEY
+```
+
+## Commands
+
+### Image (text→image)
+```bash
+python scripts/agnes_api.py image --prompt "description" --size 2K --download
+```
+Options: --prompt (required), --size (1K/2K/3K/4K or WxH), --ratio, --download
+
+### Image Edit (image→image)
+```bash
+python scripts/agnes_api.py image-edit --prompt "instruction" --image photo.jpg --download
+```
+Supports local files (auto base64) and URLs. Multiple: comma-separated.
+
+### Video (async, use --wait --download)
+```bash
+python scripts/agnes_api.py video --prompt "description" --mode text --seconds 5 --wait --download
+```
+Modes: text / keyframe (--first-frame, --last-frame) / reference (--images, --audios, --video-refs)
+Reference placeholders: `<Picture N>`, `<Audio N>`, `<Video N>`
+
+### Vision (image recognition)
+```bash
+python scripts/agnes_api.py vision --prompt "describe this" --image photo.jpg
+```
+Supports --thinking (deep reasoning), --model agnes-1.5-flash (speed)
+
+## Response Parsing
+- Image: `data[0].url` or `data[0].local_path`
+- Video: `video_url` or `local_path`
+- Vision: `choices[0].message.content`
+
+## Auto-Retry & Model Fallback
+5 retries (2s→5s→10s→20s→30s). 401/400 fail immediately. On model failure, auto-switches to backup model: image 2.1→2.0, vision 2.0→1.5. Video uses official agnes-video-v2.0. `model_used` in response. Use `--model` to force.
+
+Full docs: `AGENTS.md`
+> 💡 If the user pastes an image your model cannot see, ask for the image's local path or URL, then run: python scripts/agnes_api.py vision --image <path-or-url> --prompt "..."
